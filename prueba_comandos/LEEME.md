@@ -46,7 +46,8 @@ Se abre un terminal con el prompt `[prueba N1]`. Es tu bash de siempre, con cuat
 | `salir` | Sale del terminal de la prueba (el reloj **sigue corriendo**; vuelve con `prueba continuar 1`) |
 
 El reloj empieza en el momento en que la prueba se prepara. **Lee bien el enunciado antes de
-teclear**: cada comando cuenta.
+teclear**: cada comando cuenta. Si dejas la prueba a medias y la sigues otro día, la pausa cuenta
+como 30 minutos como máximo (cualquier rato de más de 30 min entre dos comandos vale 30 min).
 
 Otras órdenes desde fuera:
 

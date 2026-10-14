@@ -74,6 +74,7 @@ preparar_nivel() {
   "nivel${n}_mision" > "$d/MISION.md"
   date +%s > "$(dir_estado "$n")/inicio"
   : > "$(dir_estado "$n")/historial"
+  : > "$(dir_estado "$n")/marcas"
   rm -f "$(dir_estado "$n")/completado"
   ok "Listo. Carpeta de trabajo: $d"
 }
@@ -132,10 +133,26 @@ contar_comandos() { # cuenta las líneas del historial que son comandos reales
 calcular_puntos() { # tiempo_s num_comandos → puntos (misma fórmula que el servidor)
   echo $(( 100000 / ( $1 + 5 * $2 + 60 ) ))
 }
-formato_tiempo() { printf '%dm %02ds' $(( $1 / 60 )) $(( $1 % 60 )); }
+formato_tiempo() {
+  if [ "$1" -ge 86400 ]; then printf '%dd %dh' $(( $1 / 86400 )) $(( $1 % 86400 / 3600 ))
+  else printf '%dm %02ds' $(( $1 / 60 )) $(( $1 % 60 )); fi
+}
+# Tiempo de la prueba: del inicio hasta ahora, pero una pausa de más de PAUSA_MAX entre dos prompts
+# (rc.sh apunta la hora de cada uno en .prueba/marcas) cuenta como PAUSA_MAX. Si no, salir y volver
+# otro día, o el reloj del equipo saltando al sincronizarse, daban un tiempo enorme que el ranking
+# rechazaba ("tiempo inválido"). Un inicio vacío o roto valía 0: tiempo = la fecha entera en segundos.
+PAUSA_MAX=1800
+tiempo_prueba() { # NIVEL → "segundos descontados" (segundos ≥ 1; descontados = lo que no cuenta de las pausas)
+  local e inicio; e="$(dir_estado "$1")"
+  inicio="$(cat "$e/inicio" 2>/dev/null)"
+  case "$inicio" in ''|*[!0-9]*) inicio="$(stat -c %Y "$e/inicio" 2>/dev/null || date +%s)" ;; esac
+  { echo "$inicio"; cat "$e/marcas" 2>/dev/null; date +%s; } | awk -v max="$PAUSA_MAX" '
+    /^[0-9]+$/ { if (n++) { g = $1 - prev; if (g < 0) g = 0; if (g > max) { d += g - max; g = max }; t += g }; prev = $1 }
+    END { printf "%d %d\n", (t < 1 ? 1 : t), d }'
+}
 
 comprobar_nivel() {
-  local n="$1" d e inicio ahora t ncmd puntos
+  local n="$1" d e t descontado ncmd puntos
   d="$(dir_nivel "$n")"; e="$(dir_estado "$n")"
   export PRUEBA_NIVEL_ACTUAL="$n"
   [ -d "$d" ] || { error "No hay una prueba del nivel $n preparada."; return 1; }
@@ -143,7 +160,7 @@ comprobar_nivel() {
   titulo "Comprobando el nivel $n"
   "nivel${n}_comprobar" "$d"
   echo
-  inicio="$(cat "$e/inicio" 2>/dev/null || date +%s)"; ahora="$(date +%s)"; t=$(( ahora - inicio ))
+  read -r t descontado < <(tiempo_prueba "$n")
   ncmd="$(contar_comandos "$e/historial")"
   if [ "$PASOS_OK" -lt "$PASOS_TOTAL" ]; then
     echo "  Pasos completados: ${C_AMAR}$PASOS_OK / $PASOS_TOTAL${C_FIN}   ·   tiempo: $(formato_tiempo "$t")   ·   comandos: $ncmd"
@@ -153,6 +170,7 @@ comprobar_nivel() {
   puntos="$(calcular_puntos "$t" "$ncmd")"
   echo "${C_VERDE}  ★ ¡NIVEL $n COMPLETADO! ★${C_FIN}"
   echo "  Tiempo:   ${C_CIAN}$(formato_tiempo "$t")${C_FIN} ($t s)"
+  [ "$descontado" -gt 0 ] && echo "            ${C_GRIS}(no cuentan $(formato_tiempo "$descontado") de pausas: cada una vale como máximo $((PAUSA_MAX / 60)) min)${C_FIN}"
   echo "  Comandos: ${C_CIAN}$ncmd${C_FIN}"
   echo "  Puntos:   ${C_CIAN}$puntos${C_FIN}   (100000 / (segundos + 5·comandos + 60))"
   echo
@@ -222,7 +240,7 @@ mostrar_estado() {
     d="$(dir_nivel "$n")"; e="$(dir_estado "$n")"
     if [ ! -d "$d" ]; then echo "  Nivel $n: ${C_GRIS}sin empezar${C_FIN}"
     elif [ -f "$e/completado" ]; then read -r t c p < "$e/completado"; echo "  Nivel $n: ${C_VERDE}completado${C_FIN} en $(formato_tiempo "$t"), $c comandos, $p puntos"
-    else echo "  Nivel $n: ${C_AMAR}en curso${C_FIN} ($(formato_tiempo $(( $(date +%s) - $(cat "$e/inicio" 2>/dev/null || date +%s) ))) desde el inicio)"
+    else read -r t _ < <(tiempo_prueba "$n"); echo "  Nivel $n: ${C_AMAR}en curso${C_FIN} ($(formato_tiempo "$t") de prueba)"
     fi
   done
   echo; echo "  Resultados guardados: $(ls "$RESULTADOS" 2>/dev/null | wc -l | tr -d ' ')  (en $RESULTADOS)"

@@ -11,10 +11,12 @@ HISTFILESIZE=10000
 HISTCONTROL=            # se registra todo, también los repetidos
 unset HISTIGNORE HISTTIMEFORMAT
 shopt -s histappend
-# Guarda cada comando al instante. Si la carpeta de la prueba desaparece (borrar, rm…), avisa una vez.
+# Guarda cada comando al instante y la hora del prompt (con ella el tiempo no cuenta las pausas largas).
+# Si la carpeta de la prueba desaparece (borrar, rm…), avisa una vez.
 _prueba_guardar() {
   if [ -d "$PRUEBA_DIR/.prueba" ]; then
     history -a
+    printf '%(%s)T\n' -1 >> "$PRUEBA_DIR/.prueba/marcas"
   elif [ -z "${_PRUEBA_AVISADO:-}" ]; then
     _PRUEBA_AVISADO=1
     echo "La carpeta de la prueba ($PRUEBA_DIR) ya no existe. Escribe 'salir' y vuelve a empezar con: prueba iniciar $PRUEBA_NIVEL"
