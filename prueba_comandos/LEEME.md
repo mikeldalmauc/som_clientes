@@ -85,8 +85,9 @@ han resuelto otros. `prueba estado` te vuelve a enseñar tus claves.
   (mientras tanto el script guarda tus cosas en `~/.prueba_comandos/`).
 - **`El ranking no ha aceptado el envío`**: lee el motivo entre llaves. `nombre inválido` →
   revisa `config.local.env`; `clave incorrecta` → `CLAVE` de `config.env` no coincide con la del
-  servidor; sin respuesta → el servidor no está encendido o `SERVIDOR_URL` está mal. Vuelve a
-  ejecutar `comprobar` cuando esté arreglado: el intento no se pierde.
+  servidor; `JSON inválido` → tienes una versión antigua: actualiza con `git pull` en
+  `~/som_clientes`; sin respuesta → el servidor no está encendido o `SERVIDOR_URL` está mal.
+  Vuelve a ejecutar `comprobar` cuando esté arreglado: el intento no se pierde.
 - **`prueba: orden no encontrada`** tras `bash instalar.sh`: abre un terminal nuevo (o `source ~/.bashrc`).
 - **Nunca clones ni ejecutes la prueba con `sudo`**: `prueba …` siempre como tu usuario.
   El script pide sudo él solo cuando un paso lo necesita.

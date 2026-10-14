@@ -34,18 +34,27 @@ cargar_nivel() { # shellcheck disable=SC1090
   source "$PRUEBA_RAIZ/lib/nivel$1.sh"; }
 
 # ---------- configuración ----------
+# Quita lo que no es texto: teclas especiales (flechas, Supr…) y caracteres de control. Sin escapar
+# rompen el JSON y el servidor rechaza el envío ("JSON inválido").
+texto_limpio() {
+  sed -e 's/\x1b\[[0-9;]*[A-Za-z~]//g' -e 's/\x1bO[A-Za-z]//g' | tr -d '\000-\010\013-\037\177'
+}
+# Además sin comillas, $, ` ni \ : el nombre se guarda en config.local.env, que se carga con source
+limpiar_nombre() { texto_limpio | tr -d '\t"$`\\' | sed 's/^ *//;s/ *$//'; }
 cargar_config() {
   NOMBRE_ALUMNO=""; SERVIDOR_URL=""; CLAVE=""; ENVIAR="si"
   [ -f "$CONFIG" ]       && source "$CONFIG"
   [ -f "$CONFIG_LOCAL" ] && source "$CONFIG_LOCAL"
+  # los nombres guardados antes de limpiar_nombre pueden llevar dentro una flecha (ESC [ D)
+  NOMBRE_ALUMNO="$(printf '%s' "$NOMBRE_ALUMNO" | limpiar_nombre)"
 }
 pedir_nombre() {
   cargar_config
   if [ -z "$NOMBRE_ALUMNO" ]; then
     echo "${C_CIAN}¿Cómo te llamas? (nombre y apellido, aparecerá en el ranking):${C_FIN}"
-    read -r -p "> " NOMBRE_ALUMNO
-    NOMBRE_ALUMNO="$(echo "$NOMBRE_ALUMNO" | sed 's/^ *//;s/ *$//')"
-    [ -n "$NOMBRE_ALUMNO" ] || { error "Necesito un nombre."; exit 1; }
+    read -e -r -p "> " NOMBRE_ALUMNO   # -e: las flechas y Supr editan la línea en vez de colarse en el nombre
+    NOMBRE_ALUMNO="$(printf '%s' "$NOMBRE_ALUMNO" | limpiar_nombre)"
+    [ "${#NOMBRE_ALUMNO}" -ge 2 ] || { error "Necesito un nombre."; exit 1; }
     mkdir -p "$DATOS_ALUMNO" 2>/dev/null
     if printf 'NOMBRE_ALUMNO="%s"\n' "$NOMBRE_ALUMNO" > "$CONFIG_LOCAL"; then
       ok "Guardado en $CONFIG_LOCAL (edítalo si te equivocas)."
@@ -162,7 +171,9 @@ comprobar_nivel() {
 
 # ---------- resultados: fichero local + envío al servidor ----------
 json_escapar() { # escapa una cadena para JSON (sin comillas exteriores)
-  sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' -e 's/\r//g' | awk 'BEGIN{ORS=""} NR>1{print "\\n"} {print}'
+  # texto_limpio: en el historial acaban caracteres de control, p. ej. ^V al pulsar Ctrl+V para pegar
+  # (en la terminal inserta la tecla siguiente tal cual: otra ^V, una flecha…)
+  texto_limpio | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' | awk 'BEGIN{ORS=""} NR>1{print "\\n"} {print}'
 }
 guardar_resultado() {
   local n="$1" t="$2" ncmd="$3" puntos="$4" e json fecha fich comandos
@@ -174,7 +185,7 @@ guardar_resultado() {
   comandos="[${comandos%,}]"
   json=$(printf '{"nombre":"%s","nivel":%s,"tiempo_s":%s,"num_comandos":%s,"puntos":%s,"fecha":"%s","usuario":"%s","equipo":"%s","comandos":%s}' \
          "$(printf '%s' "$NOMBRE_ALUMNO" | json_escapar)" "$n" "$t" "$ncmd" "$puntos" "$fecha" \
-         "$(id -un)" "$(hostname 2>/dev/null | json_escapar)" "$comandos")
+         "$(id -un | json_escapar)" "$(hostname 2>/dev/null | json_escapar)" "$comandos")
   mkdir -p "$RESULTADOS" 2>/dev/null || { error "No puedo crear $RESULTADOS."; return 1; }
   fich="$RESULTADOS/nivel${n}_$(date +%Y%m%d_%H%M%S).json"
   printf '%s\n' "$json" > "$fich" || { error "No puedo escribir en $RESULTADOS."; return 1; }
