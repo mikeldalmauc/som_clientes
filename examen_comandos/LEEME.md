@@ -1,71 +1,77 @@
 # Examen de comandos
 
-El examen se publica en esta carpeta **el día de la prueba**. Hasta entonces sirve para una sola
-cosa: comprobar que tu equipo llega al **servidor de resultados**, que es donde se entregará.
+Funciona como la prueba que ya conoces (`prueba_comandos`): un terminal con reloj, una lista de
+pasos y tu trabajo en carpetas de verdad. Pero **es un examen**, y cambian tres cosas:
 
-Hazlo antes del examen: si tu equipo no llega al servidor, mejor saberlo hoy que ese día.
+1. **No hay `comprobar`.** Nadie te dice qué está bien y qué no. Si escribes `comprobar`, sólo
+   verás un aviso. **Tú eres responsable de comprobar por tu cuenta** que cada paso está hecho:
+   mira con `ls`, `cat`, `tree`, `head`, `grep`… lo que has creado.
+2. **Se entrega una sola vez.** Cuando lo tengas todo revisado, escribe `entregar`. Después no
+   puedes cambiar nada.
+3. **La nota no la ves tú.** Se calcula al entregar (10 × pasos bien hechos / pasos totales) y
+   la ve el profesor.
 
-## Comprueba la conexión
+El examen del 1.er trimestre (`examen iniciar 1`) tiene 18 pasos de todo lo dado en Linux:
+carpetas, escribir y leer ficheros, copiar, mover y borrar con comodines, explorar el sistema,
+`nano`, `sudo` y procesos. Cada alumno tiene sus propios datos. Dura **1 h 30 min** y puedes usar
+internet y tus apuntes.
 
-En tu máquina virtual, con la carpeta `som_clientes` que ya tienes de las pruebas de comandos:
+## Antes de empezar
 
-```bash
-cd ~/som_clientes
-git pull                              # trae esta carpeta
-bash examen_comandos/examen.sh conexion
-```
-
-Si no tienes `som_clientes`, descárgalo primero (sin `sudo`):
-
-```bash
-cd ~
-git clone https://github.com/mikeldalmauc/som_clientes
-```
-
-Tiene que salir esto:
-
-```text
-✔ El servidor responde.
-✔ La clave es correcta: las entregas llegarán.
-```
-
-La comprobación no entrega ni guarda nada: repítela las veces que quieras.
-
-## Deja instalada la orden `examen` (opcional)
-
-Así el día de la prueba no pierdes tiempo:
-
-```bash
-cd ~/som_clientes/examen_comandos
-bash instalar.sh               # sin sudo
-```
-
-Abre un terminal nuevo y ya puedes escribir `examen conexion` desde cualquier carpeta.
-
-## Si algo falla
-
-| Mensaje | Qué hacer |
-|---|---|
-| `No hay respuesta` | Tu equipo no llega al servidor. Comprueba que la máquina virtual está en la red del aula y prueba el `ping` que te indica el mensaje. Si no contesta, avisa al profesor |
-| `No tienes curl` | Instálalo y repite: `sudo apt install curl` (Mint) o `sudo pacman -S curl` (Arch) |
-| `El servidor responde, pero no es el del examen` | Avisa al profesor y dile el código que sale entre paréntesis |
-| `El servidor no acepta la CLAVE` | Avisa al profesor |
-| `examen: orden no encontrada` tras `bash instalar.sh` | Abre un terminal nuevo (o `source ~/.bashrc`) |
-| `git pull` da `Permiso denegado` | Clonaste con `sudo` y la carpeta es de root: `sudo chown -R $USER:$USER ~/som_clientes` |
-
-## El día del examen
+En tu máquina virtual, dentro de la carpeta `som_clientes` que ya tienes:
 
 ```bash
 cd ~/som_clientes
 git pull                       # trae el examen
+cd examen_comandos
+bash instalar.sh               # instala la orden `examen` (sin sudo)
 ```
 
-Y sigue las instrucciones que encontrarás aquí mismo.
+Abre un terminal nuevo y comprueba que llegas al servidor de resultados:
+
+```bash
+examen conexion       # debe decir «El servidor responde» y «La clave es correcta»
+```
+
+Tu nombre se pide la primera vez y queda en `config.local.env`.
+**Escríbelo bien, con nombre y apellido**: es lo que verá el profesor.
+
+## Cómo se hace
+
+```bash
+examen iniciar 1      # prepara ~/examen_nivel1 y abre el terminal del examen
+```
+
+El terminal del examen tiene el aviso rojo `EXAMEN N1`. Dentro tienes:
+
+| Orden | Qué hace |
+|---|---|
+| `mision` | Muestra el enunciado (también está en `MISION.md`) |
+| `entregar` | Entrega el examen. Pide escribir `ENTREGAR` para confirmar. Sólo una vez |
+| `reiniciar` | Borra tu trabajo y prepara el examen de nuevo. El reloj **no** vuelve a cero |
+| `conexion` | Comprueba que llegas al servidor de resultados. No entrega nada |
+| `salir` | Sale sin entregar. Vuelves con `examen continuar 1` |
+
+Fuera del terminal del examen: `examen estado` te dice si has entregado.
+
+## Si algo falla
+
+- **`El servidor no ha aceptado la entrega`**: escribe `conexion` para ver qué falla, espera un momento y vuelve a escribir `entregar`.
+  Si sigue fallando, avisa al profesor: te dirá que subas a Moodle el fichero que indica el
+  mensaje (está en `examen_comandos/resultados/`).
+- **`Ya entregaste…`**: sólo se puede entregar una vez. Si te has equivocado, habla con el
+  profesor.
+- **Nunca uses `sudo` para lanzar el examen.** El examen te pide la contraseña él solo cuando un
+  paso la necesita.
 
 ## Para el profesor
 
-- La dirección del servidor y la clave están en `config.env` (`SERVIDOR_URL`, `CLAVE`). La clave
-  debe coincidir con `CLAVE` de `apps/examen-comandos/.env` en el repo del servidor.
-- `conexion` pregunta al servidor por `/api/salud` y `/api/clave`: no crea ninguna entrega.
-- El examen completo está en el repo del servidor (`examen_cliente/`); su `LEEME.md` dice cómo
-  subirlo aquí el día de la prueba.
+- La dirección del servidor y la clave están en `config.env` (`SERVIDOR_URL`, `CLAVE`) y el
+  nombre del examen en `EXAMEN`. Cambia `EXAMEN` para cada convocatoria.
+- Las notas, con el detalle de cada paso y los comandos de cada alumno, se ven en
+  `http://IP-DEL-SERVIDOR/examen-comandos/` con la clave de profesor (repo del servidor,
+  `apps/examen-comandos/`).
+- Para permitir que un alumno entregue otra vez: borra su entrega en la web y, en su equipo,
+  `examen borrar N`.
+- El nivel 1 del examen está en `niveles/nivel1.sh` (propio del examen). Si un nivel no está en
+  `niveles/`, se usa el de la práctica (`../prueba_comandos/lib/nivelN.sh`).

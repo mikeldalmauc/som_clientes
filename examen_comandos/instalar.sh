@@ -24,7 +24,7 @@ if ! echo ":$PATH:" | grep -q ":$BIN:"; then
     printf '\n# examen_comandos: la orden `examen` disponible en cualquier carpeta\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$HOME/.bashrc"
   fi
   echo "Añadido ~/.local/bin al PATH en ~/.bashrc."
-  echo "Abre un terminal NUEVO (o ejecuta: source ~/.bashrc) y luego:   examen conexion"
+  echo "Abre un terminal NUEVO (o ejecuta: source ~/.bashrc) y luego:   examen iniciar 1"
 else
-  echo "Listo. Ya puedes usar:   examen conexion"
+  echo "Listo. Ya puedes usar:   examen iniciar 1"
 fi
